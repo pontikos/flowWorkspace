@@ -10,7 +10,7 @@ Plot a flowJo Gate and Cell Population
 Plots a flowJo gate and associated cell population using it's \code{flowCore} definition contained in a \code{GatingHierarchy}
 }
 \usage{
-\S4method{plotGate}{GatingHierarchy,character}(x, y, add=FALSE,border="red",tsort=FALSE,smooth=FALSE,fast=TRUE,...)
+\S4method{plotGate}{GatingHierarchy,character}(x, y, add=FALSE,border="red",tsort=FALSE,smooth=FALSE,fast=FALSE,...)
 }
 \arguments{
   \item{x}{
