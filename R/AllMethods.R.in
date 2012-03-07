@@ -3131,7 +3131,7 @@ ExportTSVAnalysis<-function(x=NULL, Keywords=NULL,EXPORT="export"){
         pops<-sapply(nds,function(i)get("fjName",nodeData(x@tree,i,"metadata")[[1]]))
         dir.create(gsub("\\.fcs","",s),showWarnings=FALSE)
         plots<-lapply(as.list(nds),function(y){
-            p<-plotGate(x,y,fast=TRUE)
+            p<-plotGate(x,y,fast=FALSE)
         })
         paths<-do.call(c,lapply(plots,function(i){
             CairoPNG(file="tmp.png",width=300,height=300)
