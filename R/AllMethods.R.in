@@ -1165,6 +1165,7 @@ setMethod("plotGate",signature(x="GatingHierarchy",y="character"),function(x,y,a
 		if(is.null(match.call()$main)){
 		    #fjName
 		    fjName<-mget(c("fjName"),nodeData(x@tree,y,"metadata")[[1]])
+		    fjName<-gsub("^/","",fjName)
 		    #sampleName
 		    sname<-x@name
 		    #construct plot title for this gate
