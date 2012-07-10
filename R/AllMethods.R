@@ -1165,6 +1165,7 @@ setMethod("plotGate",signature(x="GatingHierarchy",y="character"),function(x,y,a
 		if(is.null(match.call()$main)){
 		    #fjName
 		    fjName<-mget(c("fjName"),nodeData(x@tree,y,"metadata")[[1]])
+		    fjName<-gsub("^/","",fjName)
 		    #sampleName
 		    sname<-x@name
 		    #construct plot title for this gate
@@ -3117,7 +3118,7 @@ ExportTSVAnalysis<-function(x=NULL, Keywords=NULL,EXPORT="export"){
     #STATS
     sts<-NULL
     for(i in 1:length(x)){
-        stats<-do.call(rbind,lapply(x[[i]],function(x){stats<-getPopStats(x);rownames(stats)[1]<-"";data.frame(Sample=getSample(x),Population=rownames(stats),Freq_Of_Parent=stats$flowCore.freq,Count=stats$flowCore.count)}))
+        stats<-do.call(rbind,lapply(x[[i]],function(x){stats<-getPopStats(x);rownames(stats)[1]<-"";data.frame(Sample=getSample(x),Population=rownames(stats),Freq_Of_Parent=stats$flowCore.freq*100,Count=stats$flowCore.count)}))
         sts<-rbind(sts,stats)
     }
     sts$Population<-gsub("^/","",as.character(sts$Population))

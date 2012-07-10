@@ -2633,7 +2633,7 @@ constructTransformations<-function(x,env){
 					}
 				}
 			}
-			if(.getWorkspaceGeneratedVersion(x)<9){
+			if((.getWorkspaceGeneratedVersion(x)[,"major"]*10+.getWorkspaceGeneratedVersion(x)[,"minor"])<88){
 				cal<-.constructCalTables8.2(cal,x,compID,compnames)
 			}
 			assign("transformations",cal,env);
@@ -2715,7 +2715,7 @@ constructTransformations<-function(x,env){
 					}
 				}
 			}
-			if(.getWorkspaceGeneratedVersion(x)<9){
+			if((.getWorkspaceGeneratedVersion(x)[,"major"]*10+.getWorkspaceGeneratedVersion(x)[,"minor"])<88){
 				cal<-.constructCalTables8.2(cal,x,compID,compnames)
 			}
 			
@@ -2745,7 +2745,7 @@ constructTransformations<-function(x,env){
 			#Probably need to do something here for 8.2 flowJo workspaces.
 			#Yes we do! It's broken!
 			
-			if(.getWorkspaceGeneratedVersion(x)<9){
+			if((.getWorkspaceGeneratedVersion(x)[,"major"]*10+.getWorkspaceGeneratedVersion(x)[,"minor"])<88){
 				cal<-.constructCalTables8.2(cal,x,compID)
 			}else
 			{
@@ -2816,7 +2816,19 @@ constructTransformations<-function(x,env){
 }
 .getWorkspaceGeneratedVersion<-function(x){
     ch<-as.character(xpathApply(x,"/Workspace",function(x)xmlGetAttr(x,"versionList"))[[1]]);
-    min(na.omit(as.numeric(sapply(gsub("Pre ","",strsplit(ch,";")[[1]]),function(x)strsplit(x,"\\.")[[1]][1]))))
+	lists<-lapply(gsub("\\s","",gsub("Pre ","",strsplit(ch,";")[[1]])),function(x)strsplit(x,"\\.")[[1]])
+    #min(na.omit(as.numeric(sapply(gsub("Pre ","",strsplit(ch,";")[[1]]),function(x)strsplit(x,"\\.")[[1]][1]))))
+	len<-length(lists)
+	ver<-t(as.matrix(as.numeric(lists[[len]])))
+	nc<-ncol(ver)
+	colnames(ver)<-c("major","minor","revision")[1:nc]
+	if(nc==1){
+		ver<-cbind(ver,minor=0,revision=0)
+	}
+	else if(nc==2){
+		ver<-cbind(ver,revision=0)
+	}
+	ver
 }
 
 setMethod("getSamples","flowJoWorkspace",function(x){
