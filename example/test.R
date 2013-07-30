@@ -45,12 +45,12 @@ ws<-openWorkspace(macXML[1],options=1)
 time1<-Sys.time()	
 #Rprof()
 GT<-parseWorkspace(ws
-                    ,name=2
+                    ,name=4
 #					,execute=F
 #					,includeGates=T
                     ,subset=2
 #					,subset=c("517614.fcs")
-#					,isNcdf=T
+					,isNcdf=T
 #					,useInternal=T
 #                      ,path = "/shared/silo_researcher/Gottardo_R/gfinak_working/Phenotyping/FACS Analysis/001-Y-Pheno-JK/"
 #                    ,path="/home/wjiang2/rglab/workspace/flowWorkspace/data/vX/"
@@ -58,8 +58,8 @@ GT<-parseWorkspace(ws
 #                    ,path="~/rglab/workspace/flowWorkspace/data/RV144/1264-L-RV144"
 #                    ,path="~/rglab/workspace/flowWorkspace/data/Newell"
 #                      ,path="/shared/silo_researcher/Gottardo_R/mike_working/ITN029ST"
-                    ,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Bcell/"
-#					,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Tcell/"
+#                    ,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Bcell/"
+					,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Tcell/"
 					,dMode=4
                     ,extend_val=0
 #                    ,column.pattern=colP
