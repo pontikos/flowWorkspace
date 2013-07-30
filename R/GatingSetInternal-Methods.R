@@ -365,13 +365,25 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 
 #' constructing gating set
 #' @param prefix a \code{logical} flag indicates whether the colnames needs to be updated with prefix(e.g. "<>" or "comp") specified by compensations
-.addGatingHierarchies<-function(G,files,execute,isNcdf,compensation=NULL,wsversion = -1,extend_val = 0, prefix = TRUE,...){
+.addGatingHierarchies<-function(G,files,execute,isNcdf,comp = NULL,wsversion = -1,extend_val = 0, prefix = TRUE,...){
 	
     if(length(files)==0)
       stop("not sample to be added to GatingSet!")
 	#environment for holding fs data,each gh has the same copy of this environment
 	globalDataEnv<-new.env(parent=emptyenv())
-	
+	#replicate comp across samples if necessary
+    if(!is.list(comp)){
+     comp <- sapply(basename(files),function(i)comp) 
+    }
+    
+    
+    if(!basename(files)%in%names(comp)){
+      stop("Not all samples have their compensation objects provided!")
+    }
+    #validity check for each comp
+    if(class(comp) == "fjCompensation"){
+      
+    }
     #load the raw data from FCS
 	if(execute)
 	{
@@ -390,6 +402,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
     prefixColNames <- NULL
 	for(i in 1:nFiles)
 	{
+        thisComp <- comp[[i]] 
 		file<-files[i]		
 		sampleName<-basename(file)
 		gh<-new("GatingHierarchyInternal",pointer=G@pointer,name=sampleName)
@@ -410,7 +423,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 			else
 				data<-fs[[sampleName]]
              
-            cnd<-colnames(data)
+            cnd <- colnames(data)
 #            browser()
             #alter colnames(replace "/" with "_") for flowJo X
             if(wsversion == "1.8"){
@@ -422,27 +435,27 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 			##################################
 			#Compensating the data
 			##################################
-			comp<-.Call("R_getCompensation",G@pointer,sampleName)
-			cid<-comp$cid
+            if(is.null(thisComp)){
+              thisComp <- getCompensation(gh)
+#              thisComp <- .Call("R_getCompensation",G@pointer,sampleName)
+            }
+            
+            cid <- thisComp@cid
 			if(cid=="")
 				cid=-2
 
 			if(cid!="-1" && cid!="-2"){
 				message("Compensating");
 				
-				marker<-comp$parameters
+				marker <- unname(parameters(thisComp))
 				
-				if(is.null(compensation))
-					compobj<-compensation(matrix(comp$spillOver,nrow=length(marker),ncol=length(marker),byrow=TRUE,dimnames=list(marker,marker)))
-				else
-					compobj<-compensation#TODO: to update compensation information in C part
 				#TODO this compensation will fail if the parameters have <> braces (meaning the data is stored compensated).
 				#I need to handle this case properly.
-				res<-try(compensate(data,compobj),silent=TRUE)
+				res <- try(compensate(data,thisComp),silent=TRUE)
 				if(inherits(res,"try-error")){
 					message("Data is probably stored already compensated");
 				}else{
-					data<-res
+					data <- res
 					rm(res);
 				}
 				
@@ -454,23 +467,23 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 			else if(cid=="-1")
 			{
 				##Acquisition defined compensation.
-				nm<-comp$comment
+				nm <- thisComp@comment
 				
 				if(grepl("Acquisition-defined",nm)){
 					###Code to compensate the sample using the acquisition defined compensation matrices.
 					message("Compensating with Acquisition defined compensation matrix");
 					#browser()
-					if(is.null(compensation))
+					if(is.null(thisComp))
 					{
-						compobj<-compensation(spillover(data)$SPILL)
+                        thisComp <- compensation(spillover(data)$SPILL)
 						gh@compensation<-spillover(data)$SPILL
 					}else
 					{
-						compobj<-compensation
-						gh@compensation<-compensation@spillover
+						
+						gh@compensation <- thisComp@spillover
 					}
 					
-					res<-try(compensate(data,compobj),silent=TRUE)
+					res<-try(compensate(data,thisComp),silent=TRUE)
 					if(inherits(res,"try-error")){
 						message("Data is probably stored already compensated");
 					}else{
@@ -493,9 +506,9 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
                   }
                   prefixColNames <- cnd
                   
-                  wh<-match(parameters(compobj),prefixColNames)
+                  wh <- match(parameters(thisComp),prefixColNames)
                   
-                  prefixColNames[wh]<-paste(comp$prefix,parameters(compobj),comp$suffix,sep="")
+                  prefixColNames[wh] <- paste(thisComp@prefix,parameters(thisComp),thisComp@suffix,sep="")
                   
                     
                 }
@@ -538,7 +551,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
               colnames(mat) <- cnd
             }
             
-            data@exprs<-mat #circumvent the validity check of exprs<- to speed up
+            data@exprs <- mat #circumvent the validity check of exprs<- to speed up
             if(isNcdf){
               fs[[sampleName]] <- data 
 
@@ -550,7 +563,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
             #so we need update this range info by transforming it
             tInd <- grepl("[Tt]ime",cnd)
             tRg  <- range(mat[,tInd])
-            tempenv <- .transformRange(gh,wsversion,fs@frames,timeRange = tRg)
+            tempenv <- .transformRange(gh,wsversion,fs@frames,timeRange = tRg, prefix = thisComp@prefix, suffix = thisComp@suffix)
             dataenv <- nodeDataDefaults(gh@tree,"data")
             assign("axis.labels",tempenv$axis.labels,dataenv)
             
@@ -581,85 +594,84 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 	G
 }
 
-.transformRange_vX<-function(gh){
-        sampleName <- getSample(gh)
-        dataenv <- nodeDataDefaults(gh@tree,"data")
-        frmEnv<-dataenv$data$ncfs@frames
-        rawRange<-range(get(sampleName,frmEnv))
-        tempenv<-new.env()
-        assign("axis.labels",vector(mode="list",ncol(rawRange)),envir=tempenv);
-        cal<-getTransformations(gh)
-
-        cal_names <-trimWhiteSpace(names(cal))
-#         browser()
-        datarange<-sapply(1:dim(rawRange)[2],function(i){
-#              message(i)
-          j <- match(names(rawRange)[i],cal_names)
-          if(!is.na(j)){
-  #                                   browser()
-            rw<-rawRange[,i];
-            if(attr(cal[[j]],"type")!="gateOnly"){
-              r<-cal[[j]](c(rw))
-            }else{
-              r<-rw
-            }
-            ###An unfortunate hack. If we use the log transformation, then negative values are undefined, so
-            ##We'll test the transformed range for NaN and convert to zero.
-            r[is.nan(r)]<-0;
-            
-            ###Is this transformed?
-            if(!all(rw==r)){
-              
-  #                       browser()
-              ######################################
-              #equal interal at raw scale
-              ######################################                      
-              base10raw<-unlist(lapply(2:6,function(e)10^e))
-              base10raw<-c(0,base10raw)
-              raw<-base10raw[base10raw>min(rw)&base10raw<max(rw)]
-              pos<-signif(cal[[j]](raw))
-              
-              
-              assign("i",i,tempenv)
-              assign("raw",raw,tempenv);
-              assign("pos",pos,tempenv);
-              eval(expression(axis.labels[[i]]<-list(label=as.character(raw),at=pos)),envir=tempenv);
-            }
-            return(r);
-          }else{
-            this_chnl <- names(rawRange)[i]
-            #update time range with the real data range
-            if(grepl("[Tt]ime",this_chnl))
-            {
-              range(dataenv$data$ncfs[[sampleName]]@exprs[,this_chnl])
-            }else{
-              rawRange[,i]
-            }
-            
-          }
-      })
-  copyEnv(tempenv,dataenv);
-  
-#   browser()       
-  datarange<-t(rbind(datarange[2,]-datarange[1,],datarange))
-  datapar<-parameters(get(sampleName,frmEnv))
-  pData(datapar)[,c("range","minRange","maxRange")]<-datarange
-  
-  #gc(reset=TRUE)
-#   assign("datapar",datapar,dataenv)
-  eval(substitute(frmEnv$s@parameters<-datapar,list(s=sampleName)))
-}
+#.transformRange_vX<-function(gh){
+#        sampleName <- getSample(gh)
+#        dataenv <- nodeDataDefaults(gh@tree,"data")
+#        frmEnv<-dataenv$data$ncfs@frames
+#        rawRange<-range(get(sampleName,frmEnv))
+#        tempenv<-new.env()
+#        assign("axis.labels",vector(mode="list",ncol(rawRange)),envir=tempenv);
+#        cal<-getTransformations(gh)
+#
+#        cal_names <-trimWhiteSpace(names(cal))
+##         browser()
+#        datarange<-sapply(1:dim(rawRange)[2],function(i){
+##              message(i)
+#          j <- match(names(rawRange)[i],cal_names)
+#          if(!is.na(j)){
+#  #                                   browser()
+#            rw<-rawRange[,i];
+#            if(attr(cal[[j]],"type")!="gateOnly"){
+#              r<-cal[[j]](c(rw))
+#            }else{
+#              r<-rw
+#            }
+#            ###An unfortunate hack. If we use the log transformation, then negative values are undefined, so
+#            ##We'll test the transformed range for NaN and convert to zero.
+#            r[is.nan(r)]<-0;
+#            
+#            ###Is this transformed?
+#            if(!all(rw==r)){
+#              
+#  #                       browser()
+#              ######################################
+#              #equal interal at raw scale
+#              ######################################                      
+#              base10raw<-unlist(lapply(2:6,function(e)10^e))
+#              base10raw<-c(0,base10raw)
+#              raw<-base10raw[base10raw>min(rw)&base10raw<max(rw)]
+#              pos<-signif(cal[[j]](raw))
+#              
+#              
+#              assign("i",i,tempenv)
+#              assign("raw",raw,tempenv);
+#              assign("pos",pos,tempenv);
+#              eval(expression(axis.labels[[i]]<-list(label=as.character(raw),at=pos)),envir=tempenv);
+#            }
+#            return(r);
+#          }else{
+#            this_chnl <- names(rawRange)[i]
+#            #update time range with the real data range
+#            if(grepl("[Tt]ime",this_chnl))
+#            {
+#              range(dataenv$data$ncfs[[sampleName]]@exprs[,this_chnl])
+#            }else{
+#              rawRange[,i]
+#            }
+#            
+#          }
+#      })
+#  copyEnv(tempenv,dataenv);
+#  
+##   browser()       
+#  datarange<-t(rbind(datarange[2,]-datarange[1,],datarange))
+#  datapar<-parameters(get(sampleName,frmEnv))
+#  pData(datapar)[,c("range","minRange","maxRange")]<-datarange
+#  
+#  #gc(reset=TRUE)
+##   assign("datapar",datapar,dataenv)
+#  eval(substitute(frmEnv$s@parameters<-datapar,list(s=sampleName)))
+#}
 
 #' transform the range slot and construct axis label and pos for the plotting
-.transformRange<-function(gh,wsversion,frmEnv, timeRange = NULL){
+.transformRange<-function(gh,wsversion,frmEnv, timeRange = NULL, prefix, suffix){
 #  browser()
     sampleName <- getSample(gh)
-#    dataenv <- nodeDataDefaults(gh@tree,"data")
      cal<-getTransformations(gh)
-     comp<-.Call("R_getCompensation",gh@pointer,sampleName)
-     prefix <- comp$prefix
-     suffix <- comp$suffix
-#	frmEnv<-dataenv$data$ncfs@frames
+#     comp<-.Call("R_getCompensation",gh@pointer,sampleName)
+#     prefix <- comp$prefix
+#     suffix <- comp$suffix
+
 	rawRange<-range(get(sampleName,frmEnv))
 	tempenv<-new.env()
 	assign("axis.labels",vector(mode="list",ncol(rawRange)),envir=tempenv);
@@ -1290,4 +1302,7 @@ setMethod("setNode"
     ,signature(x="GatingSet",y="character",value="character")
     ,function(x,y,value,...){
       setNode(x,.getNodeInd(x[[1]],y),value)
+    })
+setMethod("getCompensation","GatingSet",function(x, ...){
+      lapply(x,getCompensation)
     })

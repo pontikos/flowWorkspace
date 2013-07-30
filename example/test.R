@@ -4,7 +4,7 @@ library(flowWorkspace)
 
 #dyn.load("~/R/r-devel/Rbuild/library/flowWorkspace/libs/flowWorkspace.so")
 
-#lapply(list.files("~/rglab/workspace/flowWorkspace/R",full=T,pattern="*.R$"),source)
+lapply(list.files("~/rglab/workspace/flowWorkspace/R",full=T,pattern="*.R$"),source)
 #source("~/rglab/workspace/flowWorkspace/R/AllGenerics.R")
 #source("~/rglab/workspace/flowWorkspace/R/AllMethods.R")
 #source("~/rglab/workspace/flowWorkspace/R/InternalClasses.R")
@@ -36,6 +36,7 @@ macXML<-"/home/wjiang2/rglab/workspace/flowWorkspace/data/vX/Lesson_8_vX.wsp"
 ############################################################################### 
 #cpp parser
 ###############################################################################
+
 ws<-openWorkspace(macXML[1],options=1)
 
 ############################################################################### 
@@ -47,23 +48,26 @@ GT<-parseWorkspace(ws
                     ,name=2
 #					,execute=F
 #					,includeGates=T
-#                    ,subset=2
+                    ,subset=2
 #					,subset=c("517614.fcs")
 #					,isNcdf=T
 #					,useInternal=T
-                      ,path = "/shared/silo_researcher/Gottardo_R/gfinak_working/Phenotyping/FACS Analysis/001-Y-Pheno-JK/"
+#                      ,path = "/shared/silo_researcher/Gottardo_R/gfinak_working/Phenotyping/FACS Analysis/001-Y-Pheno-JK/"
 #                    ,path="/home/wjiang2/rglab/workspace/flowWorkspace/data/vX/"
 #                    ,path="/loc/no-backup/remote_fred_hvtn/HVTN080/FACS Data/1057-M-080/"
 #                    ,path="~/rglab/workspace/flowWorkspace/data/RV144/1264-L-RV144"
 #                    ,path="~/rglab/workspace/flowWorkspace/data/Newell"
 #                      ,path="/shared/silo_researcher/Gottardo_R/mike_working/ITN029ST"
-#                    ,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Bcell/"
+                    ,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Bcell/"
 #					,path="~/rglab/workspace/flowWorkspace/data/Cytotrol/NHLBI/Tcell/"
 					,dMode=4
                     ,extend_val=0
 #                    ,column.pattern=colP
-                     ,prefix=F
+#                     ,prefix=F
+                      ,comp =comp
 					)
+comp <- getCompensation(GT[[1]])                    
+
 Sys.time()-time1                    
 Rprof(NULL)
 summaryRprof()
@@ -84,7 +88,7 @@ str(getGate(GT[[1]],2))
 getData(GT)[[1]]
 
 x11()
-plotGate(GT[[1]],xbin=64, margin =T)
+plotGate(GT[[1]],xbin=32, margin =T)
 plot(GT[[1]])
 #save to tar
 tmpdir <- "~/rglab/workspace/temp"

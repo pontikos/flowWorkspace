@@ -556,8 +556,27 @@ setMethod("getTransformations","GatingHierarchyInternal",function(x){
 					})
 			
 		})
-		
-##it is currently only for internal use		
+#' extract FlowJo compensation object    
+setGeneric("getCompensation",function(x,...)standardGeneric("getCompensation"))
+setMethod("getCompensation","GatingHierarchyInternal",function(x, ...){
+      comp<-.Call("R_getCompensation",x@pointer,getSample(x))
+      
+      marker <- comp$parameters
+      comp$value <- matrix(comp$spillOver
+                                ,nrow=length(marker)
+                                ,ncol=length(marker)
+                                ,byrow=TRUE
+                                ,dimnames=list(marker,marker)
+                              )
+      comp$spillOver <- NULL  #TODO: 'spillOver' a typo that needs to be fixed in c++ code
+      comp$parameters <- NULL 
+      
+      do.call(fjCompensation,list(comp$value))
+      
+      
+    })        
+        
+#' it is currently only for internal use		
 setMethod("getCompensationMatrices","GatingHierarchyInternal",function(x){
 			comp<-.Call("R_getCompensation",x@pointer,getSample(x))
 			cid<-comp$cid

@@ -106,3 +106,65 @@ setMethod("show",signature("booleanFilter"),function(object){
 			cat("\n")
 			invisible(msg)
 		})
+    
+#' a class inherited from flowCore::compensation
+#' besides spillover matrix, it also stores prefix and suffix used to for 
+#' channel names since flowJo used prefixed channels to define gates    
+setClass("fjCompensation", contains = "compensation"
+    ,representation(prefix = "character"
+                  ,suffix = "character"
+                  ,cid = "character"
+                  ,comment = "character")
+    , prototype = prototype(prefix = "<"
+                            , suffix = ">"
+                            , cid = "1"
+                            , comment = ""
+                            )
+                )
+
+## Constructor: modified based on flowCore::compensation 
+fjCompensation <- function(..., spillover, compensationId="defaultCompensation", prefix = "<", suffix = ">", comment = "",cid = "1")
+{
+  
+  parms <- flowCore:::parseDots(list(...))
+  if(missing(spillover))
+    spillover <- as.matrix(parms$values)
+  if(!is.matrix(spillover) || !is.numeric(spillover) ||
+      ncol(spillover) != nrow(spillover))
+    stop("'spillover' must be numeric matrix with same number of ",
+        "rows and columns", call.=FALSE)
+  if(is.null(colnames(spillover)))
+    stop("Spillover matrix must have colnames", call.=FALSE)
+  flowCore:::checkClass(compensationId, "character", 1)
+
+  if(!length(parms$parameters))
+    parms <- sapply(colnames(spillover), unitytransform)
+  if(all(sapply(parms$parameters,function(x) is(x,"unitytransform"))) &&
+      !all(sapply(parms$parameters, parameters) %in% colnames(spillover)))
+    stop("Parameters and column names of the spillover matrix ",
+        "don't match.", call.=FALSE)
+#  browser()
+  new("fjCompensation"
+          , spillover = spillover 
+          , compensationId = compensationId
+          , parameters = new("parameters", parms$parameters)
+          , prefix = prefix
+          , suffix = suffix
+          , cid = cid
+          , comment = comment
+    )
+}  
+setMethod("show",
+    signature=signature(object="fjCompensation"),
+    definition=function(object){
+      cat("fjCompensation object '"
+              , object@compensationId,"':\n"
+              ,"prefix and suffix:", object@prefix, object@suffix,"\n"
+              ,"cid:", object@cid,"\n"
+              , sep="")
+      if(ncol(object@spillover)){
+        print(object@spillover)
+      }else{
+        cat("The spillover matrix is empty\n")
+      }
+    })
