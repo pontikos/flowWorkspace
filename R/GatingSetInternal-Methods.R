@@ -683,14 +683,16 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
     
     cal_names <-trimWhiteSpace(names(cal))
 	datarange<-sapply(1:dim(rawRange)[2],function(i){
-              
+              thisChnl <- names(rawRange)[i]
+              prefixedChnl <- paste(prefix,thisChnl,suffix,sep="")
 				#added gsub
               if(wsversion == "1.8"){
                 #have to do strict match for vX since trans functions can be defined for both compensated and uncompensated channel
-                j <- match(names(rawRange)[i],cal_names)
+                j <- match(prefixedChnl,cal_names)
                 isMatched <- !is.na(j) 
               }else{
-                j<-grep(gsub(suffix,"",gsub(prefix,"",names(rawRange)))[i],cal_names);
+#                j<-grep(gsub(suffix,"",gsub(prefix,"",names(rawRange)))[i],cal_names);
+                j <- grep(thisChnl,cal_names);#no need to strip prefix anymore since the input is already raw name
                 isMatched <- length(j)!=0
               }
                 
