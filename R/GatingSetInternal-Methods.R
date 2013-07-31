@@ -568,8 +568,9 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
             #so we need update this range info by transforming it
             tInd <- grepl("[Tt]ime",cnd)
             tRg  <- range(mat[,tInd])
-            tempenv <- .transformRange(gh,wsversion,fs@frames,timeRange = tRg, prefix = thisComp@prefix, suffix = thisComp@suffix)
+            tempenv <- .transformRange(gh,wsversion,fs@frames,timeRange = tRg,comp = thisComp)
             dataenv <- nodeDataDefaults(gh@tree,"data")
+#            browser()
             assign("axis.labels",tempenv$axis.labels,dataenv)
             
 
@@ -599,92 +600,31 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 	G
 }
 
-#.transformRange_vX<-function(gh){
-#        sampleName <- getSample(gh)
-#        dataenv <- nodeDataDefaults(gh@tree,"data")
-#        frmEnv<-dataenv$data$ncfs@frames
-#        rawRange<-range(get(sampleName,frmEnv))
-#        tempenv<-new.env()
-#        assign("axis.labels",vector(mode="list",ncol(rawRange)),envir=tempenv);
-#        cal<-getTransformations(gh)
-#
-#        cal_names <-trimWhiteSpace(names(cal))
-##         browser()
-#        datarange<-sapply(1:dim(rawRange)[2],function(i){
-##              message(i)
-#          j <- match(names(rawRange)[i],cal_names)
-#          if(!is.na(j)){
-#  #                                   browser()
-#            rw<-rawRange[,i];
-#            if(attr(cal[[j]],"type")!="gateOnly"){
-#              r<-cal[[j]](c(rw))
-#            }else{
-#              r<-rw
-#            }
-#            ###An unfortunate hack. If we use the log transformation, then negative values are undefined, so
-#            ##We'll test the transformed range for NaN and convert to zero.
-#            r[is.nan(r)]<-0;
-#            
-#            ###Is this transformed?
-#            if(!all(rw==r)){
-#              
-#  #                       browser()
-#              ######################################
-#              #equal interal at raw scale
-#              ######################################                      
-#              base10raw<-unlist(lapply(2:6,function(e)10^e))
-#              base10raw<-c(0,base10raw)
-#              raw<-base10raw[base10raw>min(rw)&base10raw<max(rw)]
-#              pos<-signif(cal[[j]](raw))
-#              
-#              
-#              assign("i",i,tempenv)
-#              assign("raw",raw,tempenv);
-#              assign("pos",pos,tempenv);
-#              eval(expression(axis.labels[[i]]<-list(label=as.character(raw),at=pos)),envir=tempenv);
-#            }
-#            return(r);
-#          }else{
-#            this_chnl <- names(rawRange)[i]
-#            #update time range with the real data range
-#            if(grepl("[Tt]ime",this_chnl))
-#            {
-#              range(dataenv$data$ncfs[[sampleName]]@exprs[,this_chnl])
-#            }else{
-#              rawRange[,i]
-#            }
-#            
-#          }
-#      })
-#  copyEnv(tempenv,dataenv);
-#  
-##   browser()       
-#  datarange<-t(rbind(datarange[2,]-datarange[1,],datarange))
-#  datapar<-parameters(get(sampleName,frmEnv))
-#  pData(datapar)[,c("range","minRange","maxRange")]<-datarange
-#  
-#  #gc(reset=TRUE)
-##   assign("datapar",datapar,dataenv)
-#  eval(substitute(frmEnv$s@parameters<-datapar,list(s=sampleName)))
-#}
-
 #' transform the range slot and construct axis label and pos for the plotting
-.transformRange<-function(gh,wsversion,frmEnv, timeRange = NULL, prefix, suffix){
+.transformRange<-function(gh,wsversion,frmEnv, timeRange = NULL, comp){
 #  browser()
     sampleName <- getSample(gh)
-     cal<-getTransformations(gh)
-#     comp<-.Call("R_getCompensation",gh@pointer,sampleName)
-#     prefix <- comp$prefix
-#     suffix <- comp$suffix
-
-	rawRange<-range(get(sampleName,frmEnv))
-	tempenv<-new.env()
-	assign("axis.labels",vector(mode="list",ncol(rawRange)),envir=tempenv);
+    cal<-getTransformations(gh)
     
+    #update channls with prefix    
+    prefix <-  comp@prefix
+    suffix <-  comp@suffix
+    compChnls <- unname(parameters(comp))
+	rawRange<-range(get(sampleName,frmEnv))
+    chnls <- colnames(rawRange)
+    nCols <- length(chnls)
+    compChnlInd <- match(compChnls,chnls)
+    prefixedChnls <- chnls 
+    prefixedChnls[compChnlInd] <- paste(prefix,prefixedChnls[compChnlInd],suffix,sep="")
+    
+	tempenv<-new.env()
+	assign("axis.labels",vector(mode="list",nCols),envir=tempenv);
+    names(tempenv$axis.labels) <- prefixedChnls
     cal_names <-trimWhiteSpace(names(cal))
+    
 	datarange<-sapply(1:dim(rawRange)[2],function(i){
-              thisChnl <- names(rawRange)[i]
-              prefixedChnl <- paste(prefix,thisChnl,suffix,sep="")
+              thisChnl <- chnls[i]
+              prefixedChnl <- prefixedChnls[i]
 				#added gsub
               if(wsversion == "1.8"){
                 #have to do strict match for vX since trans functions can be defined for both compensated and uncompensated channel
@@ -741,7 +681,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 					
 				}
 			})
-#	copyEnv(tempenv,dataenv);
+
 	
 #	browser()		
 	datarange<-t(rbind(datarange[2,]-datarange[1,],datarange))
