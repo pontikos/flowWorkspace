@@ -77,7 +77,7 @@ setMethod("plot",c("GatingHierarchyInternal","numeric"),function(x,y,...){
       
       
       # get graphNEL object
-      g <- flowWorkspace:::.getGraph(x)
+      g <- flowWorkspaceEx:::.getGraph(x)
       
       
       if(length(y)==1){#use it as the root
@@ -119,13 +119,13 @@ setMethod("plot",c("GatingHierarchyInternal","numeric"),function(x,y,...){
         stop("Rgraphviz doesn't know how to plot leaf node!")
       }
       g <- subGraph(subNodes, g)
-      flowWorkspace:::.plotGatingTree(g,...)
+      flowWorkspaceEx:::.plotGatingTree(g,...)
       
     })
 
 setMethod("plot",c("GatingHierarchyInternal","character"),function(x,y,...){
       
-      plot(x,flowWorkspace:::.getNodeInd(x,y))
+      plot(x,flowWorkspaceEx:::.getNodeInd(x,y))
       
     })
 setMethod("show","GatingHierarchyInternal",function(object){

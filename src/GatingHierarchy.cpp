@@ -56,24 +56,22 @@ GatingHierarchy::GatingHierarchy()
 /*
  * Constructor that starts from a particular sampleNode from workspace to build a tree
  */
-GatingHierarchy::GatingHierarchy(wsSampleNode curSampleNode,workspace * ws,bool isParseGate,trans_global_vec * _gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,unsigned short _dMode)
+GatingHierarchy::GatingHierarchy(wsSampleNode curSampleNode,workspace * ws,bool isParseGate,bool parseComp,trans_global_vec * _gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,string prefix,string suffix,unsigned short _dMode)
 {
-//	data=NULL;
+
 	dMode=_dMode;
 	isLoaded=false;
-//	isGated=false;
-//	thisWs=ws;
-//	nc=_nc;
-//	gTrans=_gTrans;
-//	cout<<"get root node"<<endl;
 
 	wsRootNode root=ws->getRoot(curSampleNode);
 	if(isParseGate)
 	{
+		if(parseComp)
+		{
+			if(dMode>=GATING_HIERARCHY_LEVEL)
+				cout<<endl<<"parsing compensation..."<<endl;
+			comp=ws->getCompensation(curSampleNode);
+		}
 
-		if(dMode>=GATING_HIERARCHY_LEVEL)
-			cout<<endl<<"parsing compensation..."<<endl;
-		comp=ws->getCompensation(curSampleNode);
 
 		if(dMode>=GATING_HIERARCHY_LEVEL)
 			cout<<endl<<"parsing trans flags..."<<endl;
@@ -81,14 +79,12 @@ GatingHierarchy::GatingHierarchy(wsSampleNode curSampleNode,workspace * ws,bool 
 
 		if(dMode>=GATING_HIERARCHY_LEVEL)
 			cout<<endl<<"parsing transformation..."<<endl;
-		trans=ws->getTransformation(root,comp,transFlag,_gTrans,_globalBiExpTrans,_globalLinTrans);
+		trans=ws->getTransformation(root,comp,transFlag,_gTrans,_globalBiExpTrans,_globalLinTrans,prefix,suffix);
 	}
 	if(dMode>=POPULATION_LEVEL)
 		cout<<endl<<"parsing populations..."<<endl;
 	VertexID pVerID=addRoot(ws->to_popNode(root));
 	addPopulation(pVerID,ws,&root,isParseGate);
-//	if(isParseGate)
-//		gating();
 
 }
 /*

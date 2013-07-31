@@ -152,7 +152,7 @@ public:
 	GatingHierarchy();
 	~GatingHierarchy();
 
-	GatingHierarchy(wsSampleNode curSampleNode,workspace * ws,bool isGating,trans_global_vec * _gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,unsigned short dMode);
+	GatingHierarchy(wsSampleNode curSampleNode,workspace * ws,bool isGating,bool parseComp,trans_global_vec * _gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,string prefix,string suffix,unsigned short dMode);
 
 
 	flowData getData(VertexID nodeID);//from memory

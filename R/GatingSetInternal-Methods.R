@@ -14,7 +14,7 @@ save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
   cdf <- match.arg(cdf,c("copy","move","skip","symlink","link"))
   guid <- G@guid
   if(length(guid)==0){
-    G@guid <- flowWorkspace:::.uuid_gen()
+    G@guid <- flowWorkspaceEx:::.uuid_gen()
     guid <- G@guid
   }
   rds_toSave <- paste(guid,"rds",sep=".")
@@ -43,7 +43,7 @@ save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
       }
       
       #validity check for cdf
-      if(flowWorkspace:::isNcdf(G[[1]])){
+      if(flowWorkspaceEx:::isNcdf(G[[1]])){
         if(length(this_files)!=0){
           cdf_ind <- grep("\\.nc$",this_files)
           if(length(cdf_ind) != 1){
@@ -58,7 +58,7 @@ save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
         file.remove(file.path(path,rds_toSave))
         file.remove(file.path(path,dat_toSave))
         
-        if(flowWorkspace:::isNcdf(G[[1]])){
+        if(flowWorkspaceEx:::isNcdf(G[[1]])){
           #check if the target path is the same as current cdf path
 #            browser()
           this_cdf <- file.path(path,this_files[cdf_ind])
@@ -82,7 +82,7 @@ save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
     
   }
 #  browser()
-  invisible(flowWorkspace:::.save_gs(G=G,path = path, cdf = cdf, ...))
+  invisible(flowWorkspaceEx:::.save_gs(G=G,path = path, cdf = cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   
@@ -96,7 +96,7 @@ load_gs<-function(path){
     stop(path,"' not found!")
   files<-list.files(path)
 #   browser()
-  flowWorkspace:::.load_gs(output = path, files = files)$gs
+  flowWorkspaceEx:::.load_gs(output = path, files = files)$gs
   
 }
 
@@ -124,7 +124,7 @@ load_gs<-function(path){
     
     filestoSave <- c(rds.file,dat.file)
     #save ncdf file
-    if(cdf != "skip" && flowWorkspace:::isNcdf(G[[1]]))
+    if(cdf != "skip" && flowWorkspaceEx:::isNcdf(G[[1]]))
     {
       from<-ncFlowSet(G)@file
 #      browser()
@@ -199,7 +199,7 @@ load_gs<-function(path){
       {
         gs@set[[i]]@pointer<-gs@pointer
       }
-      if(flowWorkspace:::isNcdf(gs[[1]]))
+      if(flowWorkspaceEx:::isNcdf(gs[[1]]))
       {
         if(length(nc.file)==0)
           stop(".nc file missing in ",file)
@@ -257,13 +257,18 @@ unarchive<-function(file,path=tempdir()){
 
 
 
-.parseWorkspace<-function(xmlFileName,sampleIDs,execute,path,dMode,isNcdf,includeGates,flowSetId=NULL,sampNloc="keyword",xmlParserOption, ...){
+.parseWorkspace<-function(xmlFileName,sampleIDs,execute,path,dMode,isNcdf,includeGates,flowSetId=NULL,sampNloc="keyword",xmlParserOption, comp = NULL,wsversion = -1, prefix ="", suffix = "", ...){
 
 
 	message("calling c++ parser...")
 #	browser()
 	time1<-Sys.time()
-	G<-GatingSet(x=xmlFileName,y=sampleIDs,includeGates=includeGates,sampNloc=sampNloc,xmlParserOption = xmlParserOption, dMode=dMode)
+    parseComp <- is.null(comp)
+    if(wsversion != "1.8"&&!parseComp){
+        stop("external compensations is only valid for flowJo X!")
+    }
+    
+	G<-GatingSet(x=xmlFileName,y=sampleIDs,includeGates=includeGates,sampNloc=sampNloc,xmlParserOption = xmlParserOption, parseComp = parseComp, prefix=prefix, suffix = suffix, dMode=dMode)
 #	time_cpp<<-time_cpp+(Sys.time()-time1)
 	message("c++ parsing done!")
 	samples<-.Call("R_getSamples",G@pointer)
@@ -313,7 +318,7 @@ unarchive<-function(file,path=tempdir()){
 	}
 #	browser()
 #	print(Sys.time()-time1)
-	G<-.addGatingHierarchies(G,files,execute,isNcdf,...)
+	G<-.addGatingHierarchies(G,files,execute,isNcdf,comp = comp, wsversion = wsversion, ...)
 #	time1<-Sys.time()
 
 	message("done!")
@@ -365,7 +370,7 @@ setMethod("GatingSet",c("GatingHierarchyInternal","character"),function(x,y,path
 
 #' constructing gating set
 #' @param prefix a \code{logical} flag indicates whether the colnames needs to be updated with prefix(e.g. "<>" or "comp") specified by compensations
-.addGatingHierarchies<-function(G,files,execute,isNcdf,comp = NULL,wsversion = -1,extend_val = 0, prefix = TRUE,...){
+.addGatingHierarchies<-function(G,files,execute,isNcdf,comp ,wsversion,extend_val = 0, prefix = TRUE,...){
 	
     if(length(files)==0)
       stop("not sample to be added to GatingSet!")
@@ -1108,7 +1113,7 @@ setMethod("clone",c("GatingSetInternal"),function(x,...){
 			#deep copying flowSet/ncdfFlowSet
 			message("cloning flow data...")
 			fs<-ncFlowSet(x)
-			if(flowWorkspace:::isNcdf(x[[1]]))
+			if(flowWorkspaceEx:::isNcdf(x[[1]]))
 				fs_clone<-ncdfFlow::clone.ncdfFlowSet(fs,isEmpty=FALSE,isNew=TRUE,...)
 			else
 				fs_clone<-flowCore:::copyFlowSet(fs)
@@ -1248,7 +1253,7 @@ setMethod("[",c("GatingSetInternal"),function(x,i,j,...,drop){
             #subsetting flowSet
 			fs<-ncFlowSet(clone)[i]
             #deep copying flowSet/ncdfFlowSet R object(but still pointing to the same cdf)
-            if(flowWorkspace:::isNcdf(clone[[1]]))
+            if(flowWorkspaceEx:::isNcdf(clone[[1]]))
               fs<-ncdfFlow::clone.ncdfFlowSet(fs,isEmpty=FALSE,isNew=FALSE)
             else
               fs<-flowCore:::copyFlowSet(fs)

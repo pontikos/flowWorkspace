@@ -328,7 +328,7 @@ GatingSet::GatingSet(vector<string> sampleNames,unsigned short _dMode){
 
 
 //read xml file and create the appropriate flowJoWorkspace object
-GatingSet::GatingSet(string sFileName,bool isParseGate,unsigned short sampNloc,int xmlParserOption,unsigned short _dMode)
+GatingSet::GatingSet(string sFileName,bool isParseGate,unsigned short sampNloc,int xmlParserOption, unsigned short _dMode)
 {
 		ws=NULL;
 		LIBXML_TEST_VERSION
@@ -388,10 +388,10 @@ void GatingSet::parseWorkspace(unsigned short groupID,bool isParseGate)
 {
 	//first get all the sample IDs for given groupID
 	vector<string> sampleID=ws->getSampleID(groupID);
-	parseWorkspace(sampleID,isParseGate);
+	parseWorkspace(sampleID,isParseGate,true,"","");
 
 }
-void GatingSet::parseWorkspace(vector<string> sampleIDs,bool isParseGate)
+void GatingSet::parseWorkspace(vector<string> sampleIDs,bool isParseGate,bool parseComp,string prefix,string suffix)
 {
 
 	//contruct gating hiearchy for each sampleID
@@ -402,7 +402,7 @@ void GatingSet::parseWorkspace(vector<string> sampleIDs,bool isParseGate)
 			cout<<endl<<"... start parsing sample: "<<*it<<"... "<<endl;
 		wsSampleNode curSampleNode=getSample(ws,*it);
 
-		GatingHierarchy *curGh=new GatingHierarchy(curSampleNode,ws,isParseGate,&gTrans,&globalBiExpTrans,&globalLinTrans,dMode);
+		GatingHierarchy *curGh=new GatingHierarchy(curSampleNode,ws,isParseGate,parseComp,&gTrans,&globalBiExpTrans,&globalLinTrans,prefix,suffix,dMode);
 
 		string sampleName=ws->getSampleName(curSampleNode);
 

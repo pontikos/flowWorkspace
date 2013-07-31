@@ -127,7 +127,7 @@ setMethod("parseWorkspace",signature("flowJoWorkspace"),function(obj,useInternal
 #            path=obj@path 
 #    }
 	#Check that the files exist now so we don't have to wait a long time.
-	filenames<-flowWorkspace:::getFileNames(obj);
+	filenames<-flowWorkspaceEx:::getFileNames(obj);
 	#sapply(filenames,function(x)list.files(path=path,pattern=x,recursive=T))
 	#	missingfiles<-!file.exists()
 	#	if(length(which(missingfiles))/length(filenames)>=0.25){
@@ -1055,7 +1055,7 @@ saveNcdf<-function(objName,path=getwd()){
 writeGatingSetGatesToNetCDFParallel<-function(gatingset,isNew=FALSE){
 	if(!is.na(match("multicore",loadedNamespaces()))&!is.na(match("foreach",loadedNamespaces()))&!is.na(match("doMC",loadedNamespaces()))){
 		#Don't need to return anything after the parallel call since the goal is just to write to the netcdf files.
-		tmp<-unlist(multicore::mclapply(gatingset@set,function(y){flowWorkspace:::writeGatesToNetCDF(y,isNew=isNew);getIndiceFile(y)}),use.names=FALSE)
+		tmp<-unlist(multicore::mclapply(gatingset@set,function(y){flowWorkspaceEx:::writeGatesToNetCDF(y,isNew=isNew);getIndiceFile(y)}),use.names=FALSE)
 		#here I may need to set the thisIndices to NA.
 		for(i in 1:length(tmp)){
 			#Update the indices file
@@ -1069,7 +1069,7 @@ writeGatingSetGatesToNetCDFParallel<-function(gatingset,isNew=FALSE){
 		}
 	}else{
 		for(j in 1:length(gatingset)){
-				flowWorkspace:::writeGatesToNetCDF(gatingset[[j]],isNew=isNew)
+				flowWorkspaceEx:::writeGatesToNetCDF(gatingset[[j]],isNew=isNew)
 		}
 	}
 }
@@ -1081,7 +1081,7 @@ writeGatesToNetCDF<-function(hierarchy,isNew=FALSE){
 #		nlist<-RBGL::bfs(hierarchy@tree)
 		nlist<-getNodes(hierarchy)
 		#Filter boolean gates
-		nlist<-nlist[sapply(nlist,function(x)!flowWorkspace:::.isBooleanGate.graphNEL(hierarchy,x))]
+		nlist<-nlist[sapply(nlist,function(x)!flowWorkspaceEx:::.isBooleanGate.graphNEL(hierarchy,x))]
 		len<-length(getIndices(hierarchy,nlist[1]))
 		
 		##get all indices in the format of raw bit vector
@@ -1588,7 +1588,7 @@ setMethod("combine",signature("GatingSet","GatingSet"),function(x,y,...){
 	if(!haveSameGatingHierarchy(x,y)){
 		stop("x and y must have the same gating hierarchy for each sample")
 	}
-	if(all(unlist(lapply(x,function(xx)flowWorkspace:::isNcdf(xx)),use.names=FALSE))&all(unlist(lapply(y,function(xx)flowWorkspace:::isNcdf(xx)),use.names=FALSE))){
+	if(all(unlist(lapply(x,function(xx)flowWorkspaceEx:::isNcdf(xx)),use.names=FALSE))&all(unlist(lapply(y,function(xx)flowWorkspaceEx:::isNcdf(xx)),use.names=FALSE))){
 		a<-getNcdf(x);
 		b<-getNcdf(y);
 		nc3<-rbind2(a,b);
@@ -1598,7 +1598,7 @@ setMethod("combine",signature("GatingSet","GatingSet"),function(x,y,...){
 		assign("ncfs",nc3,envir=ne)
 		for(i in seq_along(G))
 		{
-			flowWorkspace:::setDataEnv(G[[i]],ne)	
+			flowWorkspaceEx:::setDataEnv(G[[i]],ne)	
 		}
 		file.remove(c(a@file,b@file))
 		#remove the calling objects
@@ -1606,12 +1606,12 @@ setMethod("combine",signature("GatingSet","GatingSet"),function(x,y,...){
 		rm(list=rme,envir=parent.frame())
 		rme<-deparse(substitute(y))
 		rm(list=rme,envir=parent.frame())
-	}else if(all(unlist(lapply(x,function(xx)!flowWorkspace:::isNcdf(xx)),use.names=FALSE))&all(unlist(lapply(y,function(xx)!flowWorkspace:::isNcdf(xx)),use.names=FALSE))){
+	}else if(all(unlist(lapply(x,function(xx)!flowWorkspaceEx:::isNcdf(xx)),use.names=FALSE))&all(unlist(lapply(y,function(xx)!flowWorkspaceEx:::isNcdf(xx)),use.names=FALSE))){
 		fs3<-as(c(as(.getBackingData(x),"list"),as(.getBackingData(y),"list")),"flowSet")
 		G<-new("GatingSet",set=c(x@set,y@set),new("AnnotatedDataFrame",rbind(pData(x),pData(y))))
 		for(i in seq_along(G))
 		{
-			flowWorkspace:::setData(G[[i]],fs3[[i]])
+			flowWorkspaceEx:::setData(G[[i]],fs3[[i]])
 		}	
 		rm(x,y)
 		rme<-deparse(substitute(x))
@@ -1698,10 +1698,10 @@ recomputeGatingSet<-function(x){
 	if(any(grepl("multicore",loadedNamespaces()))){
 	    result<-multicore::mclapply(as.list(seq_along(x)),function(i){
 	        for(j in which(nodes(x[[i]]@tree)%in%leaves(x[[i]]@tree,"out"))){
-	            flowWorkspace:::recomputeGate(x[i],j,boolean=NULL)
+	            flowWorkspaceEx:::recomputeGate(x[i],j,boolean=NULL)
 	            ##construct and return a 'call' that will set up the environment of the gating set upon returning.
 	        }
-	        flowWorkspace:::writeGatesToNetCDF(x[[i]]);
+	        flowWorkspaceEx:::writeGatesToNetCDF(x[[i]]);
 	        tmp<-x[[i]]@tree@nodeData@data
 	        calls<-vector("list",length(x[[i]]@nodes))
 	        names(calls)<-x[[i]]@nodes
@@ -1716,7 +1716,7 @@ recomputeGatingSet<-function(x){
 	        }
 	    }
 	}else{
-	for(i in seq_along(x)){sapply(which(nodes(x[[i]]@tree)%in%leaves(x[[i]]@tree,"out")),function(j){recomputeGate(x[i],j,boolean=NULL);flowWorkspace:::writeGatesToNetCDF(x[[i]])})}
+	for(i in seq_along(x)){sapply(which(nodes(x[[i]]@tree)%in%leaves(x[[i]]@tree,"out")),function(j){recomputeGate(x[i],j,boolean=NULL);flowWorkspaceEx:::writeGatesToNetCDF(x[[i]])})}
     }
 	invisible(NULL)
 }
@@ -1730,24 +1730,24 @@ l})
 recomputeGate<-function(x,gate,boolean=FALSE){
 	flowCore:::checkClass(x,"GatingSet")
 	flowCore:::checkClass(gate,"numeric")
-	if(gate>length(flowWorkspace:::getNodes(x[[1]])))
+	if(gate>length(flowWorkspaceEx:::getNodes(x[[1]])))
 	stop("gate index ",gate," out of range");
 	
 	#Start by setting the "isGated" flag to FALSE for this gate in all the gating hierarchies.
 	#recalculate the gate
 	#don't assign to the ncdf file or we'll lose the original gating info for comparison!
-		lapply(as(x,"list"),function(gh){node<-flowWorkspace:::getNodes(gh)[gate];
+		lapply(as(x,"list"),function(gh){node<-flowWorkspaceEx:::getNodes(gh)[gate];
 			assign("isGated",FALSE,envir=nodeData(gh@tree,node,"metadata")[[1]])
 			if(is.null(boolean)){
-				if(flowWorkspace:::.isBooleanGate.graphNEL(gh,node)){
-					flowWorkspace:::.calcBooleanGate(gh,node)
+				if(flowWorkspaceEx:::.isBooleanGate.graphNEL(gh,node)){
+					flowWorkspaceEx:::.calcBooleanGate(gh,node)
 				}else{
-					flowWorkspace:::.calcGate(gh,node,force=TRUE)	
+					flowWorkspaceEx:::.calcGate(gh,node,force=TRUE)	
 				}
 			}else if(!boolean){
-				flowWorkspace:::.calcGate(gh,node,force=TRUE)	
+				flowWorkspaceEx:::.calcGate(gh,node,force=TRUE)	
 			}else{
-				flowWorkspace:::.calcBooleanGate(gh,node)
+				flowWorkspaceEx:::.calcBooleanGate(gh,node)
 			}
 		})
 		
@@ -1911,7 +1911,7 @@ setMethod("Subset",signature=signature(x="GatingSet",subset="numeric"),
 		if(!all(unlist(lapply(lapply(x,function(x)getNodes(x)),function(x)length(x)>subset),use.names=FALSE))){
 			stop("subset out of range");
 		}
-		ncfs<-ncdfFlow::clone.ncdfFlowSet(flowWorkspace:::getNcdf(x[[1]]),isNew=FALSE,isEmpty=FALSE)
+		ncfs<-ncdfFlow::clone.ncdfFlowSet(flowWorkspaceEx:::getNcdf(x[[1]]),isNew=FALSE,isEmpty=FALSE)
 		s<-getSamples(x) #Use GatingSet sample order, not ncdfFlowSet sample order (they are different, but same names)
 		for(i in 1:length(s)){
 			ind<-getIndices(x[[i]],getNodes(x[[i]])[subset])
@@ -1935,7 +1935,7 @@ getFJWSubsetIndices<-function(ws,key=NULL,value=NULL,group,requiregates=TRUE){
 	s<-getSamples(ws);
 	#TODO Use the actual value of key to name the column
 	if(!is.null(key)){
-	s$key<-flowWorkspace:::.getKeyword(ws,key)
+	s$key<-flowWorkspaceEx:::.getKeyword(ws,key)
 	}
 	g<-getSampleGroups(ws)
 	sg<-merge(s,g,by="sampleID")
@@ -2008,7 +2008,7 @@ setMethod("getGate",signature(obj="GatingHierarchy",y="character"),function(obj,
 #return gate y for a given hierarchy (by index)
 setMethod("getGate",signature(obj="GatingHierarchy",y="numeric"),function(obj,y,tsort=FALSE){
 	n<-getNodes(obj,tsort=tsort)[y]
-	if(flowWorkspace:::.isBooleanGate.graphNEL(obj,n)){
+	if(flowWorkspaceEx:::.isBooleanGate.graphNEL(obj,n)){
 		g<-get("gate",envir=nodeData(obj@tree,n,"metadata")[[1]])[[1]]
 		return(g);
 	}else{
@@ -2081,7 +2081,7 @@ setMethod("getIndices",signature(obj="GatingHierarchy",y="character"),function(o
 			p<-paste("getIndices(obj,\"",g$ref,"\")",sep="")
 			p<-paste(g$v,p,sep="")
 	 		parent<-getParent(obj,y)
-			p<-c("flowWorkspace::getIndices(obj,parent)&(",p,")");
+			p<-c("flowWorkspaceEx::getIndices(obj,parent)&(",p,")");
 			ret<-eval(parse(text=paste(p,collapse="")))
 			return(ret)
 		}else{
@@ -2089,7 +2089,7 @@ setMethod("getIndices",signature(obj="GatingHierarchy",y="character"),function(o
 	 		p<-paste(g$v,p,sep="")
 			p<-paste(p,c(g$v2,""),sep="")
 			parent<-getParent(obj,y)
-			p<-c("flowWorkspace::getIndices(obj,parent)&(",p,")");
+			p<-c("flowWorkspaceEx::getIndices(obj,parent)&(",p,")");
 			ret<-eval(parse(text=paste(p,collapse="")))
 			return(ret)
 		}
@@ -2111,7 +2111,7 @@ setMethod("getIndices",signature(obj="GatingHierarchy",y="character"),function(o
 			
 			if(is.null(ret))##load bit-vector indice from file
 			{
-				nl<-getNodes(obj)[sapply(getNodes(obj),function(x)!flowWorkspace:::.isBooleanGate.graphNEL(obj,x))]				
+				nl<-getNodes(obj)[sapply(getNodes(obj),function(x)!flowWorkspaceEx:::.isBooleanGate.graphNEL(obj,x))]				
 				ret<-ncdfFlow:::readIndice(list(nlist=nl,ncFile=getIndiceFile(obj)),Node=y)
 				
 			}
@@ -2134,7 +2134,7 @@ setMethod("writeIndice",signature(obj="GatingHierarchy",y="character",z="raw"),f
 			indiceMat<-as.matrix(z)
 			attr(indiceMat,"bitlen")<-attr(z,"bitlen")
 			attr(indiceMat,"nbitset")<-attr(z,"nbitset")
-			nl<-getNodes(obj)[sapply(getNodes(obj),function(x)!flowWorkspace:::.isBooleanGate.graphNEL(obj,x))]	
+			nl<-getNodes(obj)[sapply(getNodes(obj),function(x)!flowWorkspaceEx:::.isBooleanGate.graphNEL(obj,x))]	
 			ncdfFlow:::writeIndice(list(nlist=nl,ncFile=getIndiceFile(obj)),indiceMat,startNode=y)		
 				
 		})
@@ -2756,13 +2756,13 @@ constructTransformations<-function(x,env){
 						#browser()
 						if(length(which(calfj))!=0&length(.getCalibrationTableNames(x))==1){
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
 								attr(cal[[i]],"type")<-"flowJo"
 						}else{
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
 							#stop("I'm sorry, but the number of flowJo defined transformations doesn't match the number of transformed parameters in .extractGate. Please notify the package authors. Likely your workspace contains a case we haven't dealt with before.")
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
@@ -2772,7 +2772,7 @@ constructTransformations<-function(x,env){
 						#These are either ordered as in calnames or as in the StainChannelList
 						stainnames<-unlist(xpathApply(xmlRoot(x),"/Workspace/StainChannelList/StringArray/String",xmlValue),use.names=FALSE);
 						cn<-names(cal[calfj])
-						cal[calfj]<-sapply(flowWorkspace:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
+						cal[calfj]<-sapply(flowWorkspaceEx:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
 						names(cal[calfj])<-cn;
 						for(i in which(calfj))
 							attr(cal[[i]],"type")<-"flowJo"
@@ -2838,13 +2838,13 @@ constructTransformations<-function(x,env){
 						#browser();
 						if(length(which(calfj))!=0&length(.getCalibrationTableNames(x))==1){
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
 								attr(cal[[i]],"type")<-"flowJo"
 						}else{
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
 							#stop("I'm sorry, but the number of flowJo defined transformations doesn't match the number of transformed parameters in .extractGate. Please notify the package authors. Likely your workspace contains a case we haven't dealt with before.")
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
@@ -2854,7 +2854,7 @@ constructTransformations<-function(x,env){
 						#These are either ordered as in calnames or as in the StainChannelList
 						stainnames<-unlist(xpathApply(xmlRoot(x),"/Workspace/StainChannelList/StringArray/String",xmlValue),use.names=FALSE);
 						cn<-names(cal[calfj])
-						cal[calfj]<-sapply(flowWorkspace:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
+						cal[calfj]<-sapply(flowWorkspaceEx:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
 						names(cal[calfj])<-cn;
 						for(i in which(calfj))
 							attr(cal[[i]],"type")<-"flowJo"
@@ -2922,13 +2922,13 @@ constructTransformations<-function(x,env){
 						#browser();
 						if(length(which(calfj))!=0&length(.getCalibrationTableNames(x))==1){
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x))),length(cal[calfj])) #apply one to all remaining dimensions
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
 								attr(cal[[i]],"type")<-"flowJo"
 						}else{
 							cn<-names(cal[calfj])
-							cal[calfj]<-rep(list(flowWorkspace:::.getCalibrationTable(x,flowWorkspace:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
+							cal[calfj]<-rep(list(flowWorkspaceEx:::.getCalibrationTable(x,flowWorkspaceEx:::.getCalibrationTableNames(x)[1])),length(cal[calfj])) #apply the first one to all remaining dimensions
 							names(cal[calfj])<-cn;
 							for(i in which(calfj))
 								attr(cal[[i]],"type")<-"flowJo"
@@ -2937,7 +2937,7 @@ constructTransformations<-function(x,env){
 						#These are either ordered as in calnames or as in the StainChannelList
 						stainnames<-unlist(xpathApply(xmlRoot(x),"/Workspace/StainChannelList/StringArray/String",xmlValue),use.names=FALSE);
 						cn<-names(cal[calfj])
-						cal[calfj]<-sapply(flowWorkspace:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
+						cal[calfj]<-sapply(flowWorkspaceEx:::.getCalibrationTableNames(x),function(y).getCalibrationTable(x,y))[match(calnames[calfj],stainnames)]
 						names(cal[calfj])<-cn;
 						for(i in which(calfj))
 							attr(cal[[i]],"type")<-"flowJo"
@@ -3255,9 +3255,9 @@ includedGate2ExcludedGate<-function(gs,includegates){
 	#set difference between the included gates and all the rest to get the excluded gates
 	
 	#get the nodes in breadth first search order
-	bfsgates<-lapply(gs,function(y)RBGL::bfs(y@tree)[which(sapply(RBGL::bfs(y@tree),function(x)!flowWorkspace:::.isBooleanGate.graphNEL(y,x)))])
+	bfsgates<-lapply(gs,function(y)RBGL::bfs(y@tree)[which(sapply(RBGL::bfs(y@tree),function(x)!flowWorkspaceEx:::.isBooleanGate.graphNEL(y,x)))])
 	#get the gates in default order
-	gates<-lapply(gs,function(y)flowWorkspace:::getNodes(y))
+	gates<-lapply(gs,function(y)flowWorkspaceEx:::getNodes(y))
 	#reorder the bfsgates so that indices match the order in getNodes
 	for(i in seq_along(bfsgates)){
 		bfsgates[[i]]<-match(bfsgates[[i]],gates[[i]])
@@ -3280,7 +3280,7 @@ ExportTSVAnalysis<-function(x=NULL, Keywords=NULL,EXPORT="export"){
     dir.create(EXPORT)
     setwd(EXPORT)
 
-    x<-flowWorkspace:::splitGatingSetByNgates(x);
+    x<-flowWorkspaceEx:::splitGatingSetByNgates(x);
     #STATS
     sts<-NULL
     for(i in 1:length(x)){
@@ -3294,7 +3294,7 @@ ExportTSVAnalysis<-function(x=NULL, Keywords=NULL,EXPORT="export"){
         s<-getSample(x)
         nds<-getNodes(x)[-1L] #first node is the root, there is no associated gate
         #TODO filter nodes to remove boolean gates
-        nds<-nds[!sapply(nds,function(y)flowWorkspace:::.isBooleanGate.graphNEL(x,y))]
+        nds<-nds[!sapply(nds,function(y)flowWorkspaceEx:::.isBooleanGate.graphNEL(x,y))]
         pops<-sapply(nds,function(i)get("fjName",nodeData(x@tree,i,"metadata")[[1]]))
         dir.create(gsub("\\.fcs","",s),showWarnings=FALSE)
         plots<-lapply(as.list(nds),function(y){

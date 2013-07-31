@@ -43,7 +43,7 @@ setMethod("filterObject",signature=c("booleanFilter"),function(x,...){
       #get the position of logical operators
       op_ind<-unlist(gregexpr(pattern=pattern,expr))
       #extract these operators
-      op<-flowWorkspace:::trimWhiteSpace(substring(expr,op_ind,op_ind))
+      op<-flowWorkspaceEx:::trimWhiteSpace(substring(expr,op_ind,op_ind))
       ##append & for the first node element(as C parser convention requires)
       if(length(op)==1){
         if(nchar(op)==0){

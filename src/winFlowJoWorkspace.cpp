@@ -34,7 +34,10 @@ string winFlowJoWorkspace::xPathSample(string sampleID){
 			return xpath;
 
 }
-trans_local xFlowJoWorkspace::getTransformation(wsRootNode root,const compensation & comp, PARAM_VEC & transFlag,trans_global_vec * gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans){
+/*
+ * xFlowJo does not need comp for trans parsing
+ */
+trans_local xFlowJoWorkspace::getTransformation(wsRootNode root,const compensation & comp, PARAM_VEC & transFlag,trans_global_vec * gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,string prefix,string suffix){
 
 	trans_local res;
 
@@ -85,6 +88,8 @@ trans_local xFlowJoWorkspace::getTransformation(wsRootNode root,const compensati
 		 */
 		if(pname.empty())
 			pname="*";
+		else
+			pname=prefix+pname+suffix; //add prefix and suffix,this is a hack to deal with the wsp file that does not have transformation::parameter prefixed properly
 
 		string transType=(const char*)transNode.getNodePtr()->name;
 		if(transType.compare("biex")==0)
@@ -142,7 +147,7 @@ trans_local xFlowJoWorkspace::getTransformation(wsRootNode root,const compensati
 /*
  * choose the trans from global trans vector to attach to current sample
  */
-trans_local winFlowJoWorkspace::getTransformation(wsRootNode root,const compensation & comp, PARAM_VEC & transFlag,trans_global_vec * gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans){
+trans_local winFlowJoWorkspace::getTransformation(wsRootNode root,const compensation & comp, PARAM_VEC & transFlag,trans_global_vec * gTrans,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,string prefix,string suffix){
 
 	trans_local res;
 	unsigned sampleID=atoi(root.getProperty("sampleID").c_str());

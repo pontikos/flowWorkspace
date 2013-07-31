@@ -49,8 +49,10 @@ setClass("GatingSetInternal",contains="GatingSet"
 #constructors for GatingSet
 ##########################
 setGeneric("GatingSet",function(x,y,...)standardGeneric("GatingSet"))
-#construct object from xml workspace file and a list of sampleIDs
-setMethod("GatingSet",c("character","character"),function(x,y,includeGates=FALSE,dMode=1,sampNloc="keyword",xmlParserOption, ...){
+#' construct object from xml workspace file and a list of sampleIDs
+#' @param prefix,suffix are \code{character} that tells the parser to explicitly add them to transformation::parameter names
+#' this is a hack to fix the problem that wsp file exported by flowJo X does not have transformation::parameter prefixed properly 
+setMethod("GatingSet",c("character","character"),function(x,y,includeGates=FALSE,dMode = 0,sampNloc="keyword",xmlParserOption, parseComp = TRUE,prefix,suffix, ...){
 			
 			xmlFileName<-x
 			sampleIDs<-y
@@ -63,7 +65,7 @@ setMethod("GatingSet",c("character","character"),function(x,y,includeGates=FALSE
 			if(!file.exists(xmlFileName))
 				stop(xmlFileName," not found!")
 			Object<-new("GatingSetInternal")
-			Object@pointer<-.Call("R_parseWorkspace",xmlFileName,sampleIDs,includeGates,as.integer(sampNloc),as.integer(xmlParserOption), as.integer(dMode))
+			Object@pointer<-.Call("R_parseWorkspace",xmlFileName,sampleIDs,includeGates,as.integer(sampNloc),as.integer(xmlParserOption), parseComp,prefix,suffix, as.integer(dMode),PACKAGE="flowWorkspaceEx")
             Object@guid <- .uuid_gen()
             
 			return(Object)

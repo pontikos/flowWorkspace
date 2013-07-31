@@ -4,7 +4,7 @@ setMethod("rbind2",
     definition=function(x,y="missing",...)
     {
 #           browser()
-      isNcdfList<-lapply(x,function(gs)flowWorkspace:::isNcdf(gs[[1]]))
+      isNcdfList<-lapply(x,function(gs)flowWorkspaceEx:::isNcdf(gs[[1]]))
       if(all(duplicated(unlist(isNcdfList))[-1])){
 #               browser()
         #combine flowset/ncdfFlowSet
@@ -25,7 +25,7 @@ setMethod("rbind2",
         pointer<-.Call("R_combineGatingSet",ptrlist,sampleList,package="flowWorkspace")
         G<-new("GatingSetInternal")
         G@pointer<-pointer
-        G@guid<-flowWorkspace:::.uuid_gen()
+        G@guid<-flowWorkspaceEx:::.uuid_gen()
         
         #combine R objects
         ne<-new.env(parent=emptyenv());
@@ -245,12 +245,12 @@ save_gslist<-function(gslist,path,...){
 #        browser()
         guid <- gs@guid
         if(length(guid)==0){
-          gs@guid <- flowWorkspace:::.uuid_gen()
+          gs@guid <- flowWorkspaceEx:::.uuid_gen()
           guid <- gs@guid
         }
         this_dir <- file.path(path,guid) 
 
-#        invisible(flowWorkspace:::.save_gs(gs,path = this_dir, ...))
+#        invisible(flowWorkspaceEx:::.save_gs(gs,path = this_dir, ...))
         suppressMessages(save_gs(gs,path = this_dir, ...))
       })
 #  browser()
@@ -271,7 +271,7 @@ load_gslist<-function(path){
 #   browser()
   res <- lapply(dirs,function(this_dir){
 #        browser()
-        flowWorkspace:::.load_gs(output = this_dir, files = list.files(this_dir))$gs      
+        flowWorkspaceEx:::.load_gs(output = this_dir, files = list.files(this_dir))$gs      
       })
   samples <- readRDS(file.path(path,"samples.rds"))
   GatingSetList(res, samples = samples)

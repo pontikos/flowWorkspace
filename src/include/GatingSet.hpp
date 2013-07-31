@@ -95,7 +95,7 @@ public:
 	GatingHierarchy * getGatingHierarchy(unsigned int);
 	void gating();
 	void parseWorkspace(unsigned short,bool);
-	void parseWorkspace(vector<string>,bool);
+	void parseWorkspace(vector<string>,bool,bool parseComp = true,string prefix="",string suffix="");
 	vector<string> getSamples(void);
 	void attachData(string,vector<string>,vector<string>);
 	ncdfFlow getNcObj(){return nc;}

@@ -310,7 +310,7 @@ setMethod("flowWorkspace2flowCore",signature(obj="GatingHierarchy"),function(obj
 				parentName<-(setdiff(adj(ugraph(x),n)[[1]],adj(x,n)[[1]]))
 				pid<-nids[which(nlist==parentName)]
 				
-				if(!(flowWorkspace:::.isBoolGate(hierarchy,n)))
+				if(!(flowWorkspaceEx:::.isBoolGate(hierarchy,n)))
 				{
 					message("Gate attached to view: ", n);
 					#attach the gate to the parent view

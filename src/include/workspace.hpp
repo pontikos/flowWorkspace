@@ -114,7 +114,7 @@ public:
 	 ~workspace();
 	 virtual string xPathSample(string sampleID)=0;
 	 virtual PARAM_VEC getTransFlag(wsSampleNode sampleNode)=0;
-	 virtual trans_local getTransformation(wsRootNode,const compensation &,PARAM_VEC &,trans_global_vec *,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans)=0;
+	 virtual trans_local getTransformation(wsRootNode,const compensation &,PARAM_VEC &,trans_global_vec *,biexpTrans * _globalBiExpTrans,linTrans * _globalLinTrans,string prefix,string suffix)=0;
 	 virtual compensation getCompensation(wsSampleNode)=0;
 	 virtual trans_global_vec getGlobalTrans()=0;
 	 virtual vector <string> getSampleID(unsigned short)=0;
