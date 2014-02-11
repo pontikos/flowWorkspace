@@ -229,7 +229,7 @@ load_gs<-function(path){
     
     message("saving tree object...")
     #save external pointer object
-    .Call("R_saveGatingSet",G@pointer,dat.file, typeID)
+    .Call("C_R_saveGatingSet",G@pointer,dat.file, typeID)
     
     message("saving R object...")
     saveRDS(G,rds.file)
@@ -306,7 +306,7 @@ load_gs<-function(path){
       }
       
       message("loading tree object...")
-      gs@pointer<-.Call("R_loadGatingSet",dat.file, typeID)
+      gs@pointer<-.Call("C_R_loadGatingSet",dat.file, typeID)
       
       
       if(isNcdf(gs))
@@ -393,7 +393,7 @@ unarchive<-function(file,path=tempdir()){
                   )
 
 	message("c++ parsing done!")
-	samples<-.Call("R_getSamples",G@pointer)
+	samples<-.Call("C_R_getSamples",G@pointer)
 	
 #	browser()
 	#loading and filtering data
@@ -485,7 +485,7 @@ setMethod("GatingSet", c("GatingHierarchy", "character"), function(x, y, path=".
 			files<-file.path(dataPaths,samples)
 			Object<-new("GatingSet")
 			message("generating new GatingSet from the gating template...")
-			Object@pointer <- .Call("R_NewGatingSet",x@pointer,getSample(x),samples,as.integer(dMode))
+			Object@pointer <- .Call("C_R_NewGatingSet",x@pointer,getSample(x),samples,as.integer(dMode))
             Object@guid <- .uuid_gen()
             Object@FCSPath <- dataPaths
 			Object<-.addGatingHierarchies(Object,files,execute=TRUE,isNcdf=isNcdf,...)
@@ -568,7 +568,7 @@ setMethod("GatingSet", c("GatingHierarchy", "character"), function(x, y, path=".
 			##################################
 			#Compensating the data
 			##################################
-			comp <- .Call("R_getCompensation", G@pointer, sampleName)
+			comp <- .Call("C_R_getCompensation", G@pointer, sampleName)
 			cid <- comp$cid
 			if(cid=="")
 				cid=-2
@@ -685,7 +685,7 @@ setMethod("GatingSet", c("GatingHierarchy", "character"), function(x, y, path=".
             }
             recompute <- FALSE
             nodeInd <- 0
-            .Call("R_gating",G@pointer, mat, sampleName, gains, nodeInd, recompute, extend_val, ignore.case)
+            .Call("C_R_gating",G@pointer, mat, sampleName, gains, nodeInd, recompute, extend_val, ignore.case)
 #            browser()
             #restore the non-prefixed colnames for updating data in fs with [[<- 
             #since colnames(fs) is not udpated yet.
@@ -755,7 +755,7 @@ setMethod("GatingSet", c("GatingHierarchy", "character"), function(x, y, path=".
 #  browser()
     
      cal<-.getTransformations(G@pointer, sampleName)
-     comp<-.Call("R_getCompensation",G@pointer,sampleName)
+     comp<-.Call("C_R_getCompensation",G@pointer,sampleName)
      prefix <- comp$prefix
      suffix <- comp$suffix
 #	frmEnv<-dataenv$data$ncfs@frames
@@ -1372,7 +1372,7 @@ setMethod("clone",c("GatingSet"),function(x,...){
 			clone <- x
 			#clone c structure
 			message("cloning tree structure...")
-			clone@pointer <- .Call("R_CloneGatingSet",x@pointer,sampleNames(x))
+			clone@pointer <- .Call("C_R_CloneGatingSet",x@pointer,sampleNames(x))
             clone@guid <- .uuid_gen()
 
 			#deep copying flow Data
@@ -1461,7 +1461,7 @@ setMethod("recompute",c("GatingSet"),function(x, y, ...){
               nodeInd <- as.integer(nodeID)-1
               recompute <- TRUE
 #              browser()
-              res <- try(.Call("R_gating",gh@pointer,mat,sampleName,gains,nodeInd,recompute,extend_val, ignore_case), silent = TRUE)
+              res <- try(.Call("C_R_gating",gh@pointer,mat,sampleName,gains,nodeInd,recompute,extend_val, ignore_case), silent = TRUE)
               if(class(res) == "try-error"){
                 if(!isloadData&&grepl("not found in flowData", res))
                   stop("Found ungated upstream population. Set 'alwaysLoadData = TRUE' for 'recompute' method, and try again!")
@@ -1534,7 +1534,7 @@ setReplaceMethod("sampleNames",
       oldNames <- sampleNames(object)
       #update c++ data structure
       mapply(oldNames,value, FUN = function(oldName, newName){
-            .Call("R_setSample", object@pointer, oldName, newName) 
+            .Call("C_R_setSample", object@pointer, oldName, newName) 
       })
   
       #update data

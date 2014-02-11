@@ -6,7 +6,7 @@ setMethod("setGate"
     ,function(obj,y,value,negated=FALSE,...){
       this_fobj <- filterObject(value)
       this_fobj$negated<-negated
-      .Call("R_setGate",obj@pointer,getSample(obj),as.integer(y-1),this_fobj)
+      .Call("C_R_setGate",obj@pointer,getSample(obj),as.integer(y-1),this_fobj)
       
     })
 setMethod("setGate"

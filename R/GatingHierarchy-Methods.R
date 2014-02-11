@@ -176,7 +176,7 @@ NULL
 #return a graphNEL object that only contans the node Name and isBool flags    
 .getGraph <- function(x){
   DotFile <- tempfile(fileext=".dot")
-  .Call("R_plotGh",x@pointer,getSample(x),DotFile,FALSE)
+  .Call("C_R_plotGh",x@pointer,getSample(x),DotFile,FALSE)
 #  browser()
   #read dot from into Ragraph
   g <- agread(DotFile)
@@ -506,7 +506,7 @@ setMethod("getNodes","GatingHierarchy",function(x,y=NULL,order="regular", path =
 			
             orderInd <- orderInd-1
 			
-			nodeNames <- .Call("R_getNodes",x@pointer,getSample(x),as.integer(orderInd),isPath,showHidden)
+			nodeNames <- .Call("C_R_getNodes",x@pointer,getSample(x),as.integer(orderInd),isPath,showHidden)
 
 			
             if(is.numeric(path)){
@@ -626,7 +626,7 @@ setMethod("getNodes","GatingHierarchy",function(x,y=NULL,order="regular", path =
 setMethod("getParent",signature(obj="GatingHierarchy",y="numeric"),function(obj,y){
 			#make sure the index conversion is done properly between C and R convention
 #			browser()
-			.Call("R_getParent",obj@pointer,getSample(obj),as.integer(y)-1)+1
+			.Call("C_R_getParent",obj@pointer,getSample(obj),as.integer(y)-1)+1
 		})
 setMethod("getParent",signature(obj="GatingHierarchy",y="character"),function(obj,y, ...){
 #			browser()
@@ -641,7 +641,7 @@ setMethod("getChildren",signature(obj="GatingHierarchy",y="character"),function(
 })
 setMethod("getChildren",signature(obj="GatingHierarchy",y="numeric"),function(obj,y){
 #			browser()
-			.Call("R_getChildren",obj@pointer,getSample(obj),as.integer(y)-1)+1
+			.Call("C_R_getChildren",obj@pointer,getSample(obj),as.integer(y)-1)+1
 			
 		})
 #
@@ -676,9 +676,9 @@ setMethod("getTotal",signature(x="GatingHierarchy",y="character"),function(x,y,f
 	if(is.character(y))
       stop("y has to be numeric!")
     
-	stats<-.Call("R_getPopStats",x@pointer,getSample(x),as.integer(y)-1)
+	stats<-.Call("C_R_getPopStats",x@pointer,getSample(x),as.integer(y)-1)
 	
-	pInd<-try(.Call("R_getParent", x@pointer, getSample(x), as.integer(y) -1),silent=T)
+	pInd<-try(.Call("C_R_getParent", x@pointer, getSample(x), as.integer(y) -1),silent=T)
 	
 	
 	if(class(pInd)=="try-error")#if parent exist
@@ -686,7 +686,7 @@ setMethod("getTotal",signature(x="GatingHierarchy",y="character"),function(x,y,f
 	else
 	{
 		pInd<-pInd+1 #convert c convention to R
-		pstats<-.Call("R_getPopStats",x@pointer,getSample(x),as.integer(pInd)-1)
+		pstats<-.Call("C_R_getPopStats",x@pointer,getSample(x),as.integer(pInd)-1)
 	}
 		
 	
@@ -804,7 +804,7 @@ setMethod("getGate",signature(obj="GatingHierarchy",y="numeric"),function(obj,y,
 			else
 			{
 
-				g<-.Call("R_getGate",obj@pointer,getSample(obj),vertexID)
+				g<-.Call("C_R_getGate",obj@pointer,getSample(obj),vertexID)
 				filterId <- getNodes(obj, showHidden = TRUE, path = 1, prefix = "auto")[y]
 				if(g$type==1)
 				{
@@ -850,7 +850,7 @@ setMethod("getGate",signature(obj="GatingHierarchy",y="numeric"),function(obj,y,
     isEmpty <- sapply(this_path,function(this_char)nchar(this_char)==0)
     this_path <- this_path[!isEmpty]
     
-    ind <- .Call("R_getNodeID",obj@pointer,getSample(obj),this_path)
+    ind <- .Call("C_R_getNodeID",obj@pointer,getSample(obj),this_path)
     ind + 1 # convert to R index
   }else{
     allNodes <- getNodes(obj, path = 1, prefix = "auto", showHidden = TRUE,...)
@@ -904,7 +904,7 @@ setMethod("getIndices",signature(obj="GatingHierarchy",y="character"),function(o
 setMethod("getIndices",signature(obj="GatingHierarchy",y="numeric"),function(obj,y){
 			
 
-			.Call("R_getIndices",obj@pointer,getSample(obj),as.integer(y-1))
+			.Call("C_R_getIndices",obj@pointer,getSample(obj),as.integer(y-1))
 			
 		})
     
@@ -919,7 +919,7 @@ setMethod("isGated",signature(obj="GatingHierarchy",y="character"),function(obj,
 setMethod("isGated",signature(obj="GatingHierarchy",y="numeric"),function(obj,y){
       
       
-      .Call("R_getGateFlag",obj@pointer,getSample(obj),as.integer(y-1))
+      .Call("C_R_getGateFlag",obj@pointer,getSample(obj),as.integer(y-1))
       
     })    
         
@@ -1031,7 +1031,7 @@ setMethod("getTransformations","GatingHierarchy",function(x){
       .getTransformations(x@pointer,getSample(x))
 		})
 .getTransformations <- function(pointer,sampleName){        
-    trans<-.Call("R_getTransformations",pointer,sampleName)
+    trans<-.Call("C_R_getTransformations",pointer,sampleName)
     lapply(trans,function(curTrans){
 #						browser()
           if(curTrans$type=="log")
@@ -1111,7 +1111,7 @@ setMethod("getTransformations","GatingHierarchy",function(x){
 #' getCompensationMatrices,flowJoWorkspace-method
 #' getCompensationMatrices,GatingHierarchy-method
 setMethod("getCompensationMatrices","GatingHierarchy",function(x){
-			comp<-.Call("R_getCompensation",x@pointer,getSample(x))
+			comp<-.Call("C_R_getCompensation",x@pointer,getSample(x))
 			cid<-comp$cid
 #			browser()
 			if(cid=="")
@@ -1488,7 +1488,7 @@ setMethod("setNode"
         ,signature(x="GatingHierarchy",y="numeric",value="character")
         ,function(x,y,value,...){
 
-        .Call("R_setNodeName",x@pointer,getSample(x),as.integer(y-1),value)
+        .Call("C_R_setNodeName",x@pointer,getSample(x),as.integer(y-1),value)
     })
 
 setMethod("setNode"
@@ -1516,7 +1516,7 @@ setMethod("setNode"
     ,signature(x="GatingHierarchy",y="numeric",value="logical")
     ,function(x,y,value,...){
       hidden = !value
-      .Call("R_setNodeFlag",x@pointer,getSample(x),as.integer(y-1),hidden)
+      .Call("C_R_setNodeFlag",x@pointer,getSample(x),as.integer(y-1),hidden)
     })
 setMethod("setNode"
     ,signature(x="GatingHierarchy",y="character",value="logical")

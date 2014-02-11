@@ -209,7 +209,7 @@ setMethod("add",
 	}
 	filterObject$negated<-negated
 #	browser()	
-	nodeID<-.Call("R_addGate",gh@pointer,getSample(gh),filterObject,as.integer(pid-1),name)
+	nodeID<-.Call("C_R_addGate",gh@pointer,getSample(gh),filterObject,as.integer(pid-1),name)
 	nodeID+1
 }
 
@@ -332,6 +332,6 @@ setMethod("Rm",
 			
             
             
-			.Call("R_removeNode",envir@pointer,getSample(envir),nid-1)
+			.Call("C_R_removeNode",envir@pointer,getSample(envir),nid-1)
 		})
 
