@@ -24,6 +24,8 @@ using namespace std;
 /*
  * only expose gating set pointer to R to avoid gc() by R
  */
+
+// [[register]]
 RcppExport SEXP R_plotGh(SEXP _gsPtr,SEXP _sampleName,SEXP _output) {
 BEGIN_RCPP
 
@@ -45,6 +47,8 @@ END_RCPP
 /*
  * return node names as a character vector
  */
+
+// [[register]]
 RcppExport SEXP R_getNodes(SEXP _gsPtr,SEXP _sampleName,SEXP _order,SEXP _isPath, SEXP _showHidden){
 BEGIN_RCPP
 
@@ -64,6 +68,8 @@ END_RCPP
 /*
  * query by path
  */
+
+// [[register]]
 RcppExport SEXP R_getNodeID(SEXP _gsPtr,SEXP _sampleName,SEXP _gatePath){
 BEGIN_RCPP
 
@@ -77,7 +83,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-
+// [[register]]
 RcppExport SEXP R_getParent(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -92,6 +98,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_getChildren(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -110,6 +117,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_getPopStats(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -130,7 +138,7 @@ END_RCPP
 }
 
 
-
+// [[register]]
 RcppExport SEXP R_getCompensation(SEXP _gsPtr,SEXP _sampleName){
 BEGIN_RCPP
 
@@ -154,7 +162,7 @@ END_RCPP
 }
 
 
-
+// [[register]]
 RcppExport SEXP R_getTransformations(SEXP _gsPtr,SEXP _sampleName){
 BEGIN_RCPP
 
@@ -227,43 +235,8 @@ BEGIN_RCPP
 
 END_RCPP
 }
-/*
- * cdf version
- * Deprecated: we don't want to keep a separate view of ncdfFlowSet in c++ due to the
- * data consistency concerns
- * even though it increases the communication overhead from R to C by using R_gating method
- */
-//RcppExport SEXP R_gating_cdf(SEXP _gsPtr,SEXP _sampleName,SEXP _nodeInd,SEXP _recompute){
-//BEGIN_RCPP
-//
-//
-//
-//	XPtr<GatingSet>gs(_gsPtr);
-//
-//	string sampleName=as<string>(_sampleName);
-//	unsigned short nodeInd=as<unsigned short>(_nodeInd);
-//	bool recompute=as<bool>(_recompute);
-//
-//	GatingHierarchy* gh=gs->getGatingHierarchy(sampleName);
-//	gh->loadData(sampleName);
-//	/*
-//	 * assume the data has been transformed when recompute==true
-//	 */
-//	if(!recompute)
-//	{
-//		gh->extendGate();
-//		gh->transforming(true);
-//	}
-//
-//	gh->gating(nodeInd,recompute);
-//	gh->unloadData();
-//
-//END_RCPP
-//}
-/*
- * non-cdf version
- */
 
+// [[register]]
 RcppExport SEXP R_gating(SEXP _gsPtr,SEXP _mat,SEXP _sampleName,SEXP _gains, SEXP _nodeInd,SEXP _recompute, SEXP _extend_val, SEXP _ignore_case){
 BEGIN_RCPP
 
@@ -320,7 +293,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-
+// [[register]]
 RcppExport SEXP R_getGate(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -396,6 +369,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_getIndices(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -412,6 +386,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_getGateFlag(SEXP _gsPtr,SEXP _sampleName,SEXP _i){
 BEGIN_RCPP
 
@@ -567,6 +542,8 @@ gate * newGate(List filter){
 	return g;
 
 }
+
+// [[register]]
 RcppExport SEXP R_addGate(SEXP _gsPtr,SEXP _sampleName,SEXP _filter,SEXP _parentID,SEXP _popName) {
 BEGIN_RCPP
 
@@ -591,6 +568,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_setGate(SEXP _gsPtr,SEXP _sampleName,SEXP _nodeID,SEXP _filter) {
 BEGIN_RCPP
 
@@ -613,6 +591,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_removeNode(SEXP _gsPtr,SEXP _sampleName,SEXP _nodeID) {
 BEGIN_RCPP
 
@@ -629,6 +608,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_setNodeName(SEXP _gsPtr,SEXP _sampleName,SEXP _nodeID, SEXP _newNodeName) {
 BEGIN_RCPP
 
@@ -648,6 +628,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_setNodeFlag(SEXP _gsPtr,SEXP _sampleName,SEXP _nodeID, SEXP _hidden) {
 BEGIN_RCPP
 

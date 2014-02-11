@@ -24,6 +24,8 @@ GatingSet * getGsPtr(SEXP _gsPtr){
 /*
  * constructing GatingSet from xml file
  */
+
+// [[register]]
 RcppExport SEXP R_parseWorkspace(SEXP _fileName,SEXP _sampleIDs,SEXP _isParseGate,SEXP _sampNloc,SEXP _xmlParserOption, SEXP _wsType, SEXP _dMode) {
 BEGIN_RCPP
 		string fileName=as<string>(_fileName);
@@ -47,23 +49,8 @@ BEGIN_RCPP
 END_RCPP
 }
 
-/*
- * associate nc file as the raw data to GatingSet
- * Deprecated: we don't want to keep a separate view of ncdfFlowSet in c++
- */
-//RcppExport SEXP R_setData(SEXP _gsPtr,SEXP _fileName,SEXP _sampleNames,SEXP _params) {
-//BEGIN_RCPP
-//
-//		string fileName=as<string>(_fileName);
-//		vector<string> params=as<vector<string> >(_params);
-//		vector<string> sampleNames=as<vector<string> >(_sampleNames);
-//		XPtr<GatingSet>gs(_gsPtr);
-//
-//		gs->attachData(fileName,sampleNames,params);
-//
-//END_RCPP
-//}
 
+// [[register]]
 RcppExport SEXP R_getSamples(SEXP _gsPtr) {
 BEGIN_RCPP
 
@@ -79,6 +66,8 @@ END_RCPP
 /*
  * constructing GatingSet from existing gating hierarchy and new data
  */
+
+// [[register]]
 RcppExport SEXP R_NewGatingSet(SEXP _gsPtr,SEXP _sampleName,SEXP _newSampleNames,SEXP _dMode) {
 BEGIN_RCPP
 
@@ -114,6 +103,7 @@ END_RCPP
 /*
  * constructing GatingSet with only root node for each sample
  */
+// [[register]]
 RcppExport SEXP R_NewGatingSet_rootOnly(SEXP _sampleNames,SEXP _dMode) {
 BEGIN_RCPP
 
@@ -134,6 +124,8 @@ END_RCPP
 /*
  * save/load GatingSet
  */
+
+// [[register]]
 RcppExport SEXP R_saveGatingSet(SEXP _gsPtr,SEXP _fileName, SEXP _typeID) {
 BEGIN_RCPP
 
@@ -149,7 +141,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-
+// [[register]]
 RcppExport SEXP R_loadGatingSet(SEXP _fileName, SEXP _typeID) {
 BEGIN_RCPP
 
@@ -165,7 +157,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-
+// [[register]]
 RcppExport SEXP R_CloneGatingSet(SEXP _gsPtr,SEXP _samples) {
 BEGIN_RCPP
 
@@ -181,6 +173,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_combineGatingSet(SEXP _gsPtrs,SEXP _samples) {
 BEGIN_RCPP
 
@@ -203,6 +196,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+// [[register]]
 RcppExport SEXP R_setSample(SEXP _gsPtrs,SEXP _oldName, SEXP _newName) {
 BEGIN_RCPP
 
